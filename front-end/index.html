@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>front-end</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <div id="cursor-outer"></div>
+  <div id="cursor-dot"></div>
+  <script type="module" src="/src/main.tsx"></script>
+  <script>
+    let mouseX = -100, mouseY = -100;
+    let currentX = -100, currentY = -100;
+
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+
+    // Smooth animation loop
+    function updateCursor() {
+      // Interpolate position
+      currentX += (mouseX - currentX) * 0.15;
+      currentY += (mouseY - currentY) * 0.15;
+
+      // Update CSS variables
+      document.documentElement.style.setProperty('--cursor-x', `${currentX}px`);
+      document.documentElement.style.setProperty('--cursor-y', `${currentY}px`);
+
+      requestAnimationFrame(updateCursor);
+    }
+
+    updateCursor();
+  </script>
+</body>
+
+</html>
