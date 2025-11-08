@@ -3,13 +3,16 @@ import React from "react";
 const Header: React.FC = () => (
   <header className="fixed top-0 left-0 right-0 z-50 text-white">
     <div className="container mx-auto px-6 py-4 flex justify-between items-center bg-black/20 backdrop-blur-md border-b border-white/10">
-      <div className="text-xl font-bold tracking-wider">[LOGO]</div>
+      <div className="flex items-center gap-2">
+        <img src="/src/assets/logo.png" alt="AIRISK AI" className="h-8 w-auto" />
+        <span className="text-xl font-bold tracking-wider">AIRISK AI</span>
+      </div>
       <nav className="hidden md:flex space-x-6 items-center text-sm font-medium text-gray-300">
         <a href="#problem-section" className="hover:text-white transition-colors">
           Pain Points
         </a>
-        <a href="#solution-section" className="hover:text-white transition-colors">
-          Solution / How It Works
+        <a href="https://lynk.id/airisk" className="hover:text-white transition-colors">
+          Solution
         </a>
         <a href="#features-section" className="hover:text-white transition-colors">
           Key Features
@@ -20,7 +23,7 @@ const Header: React.FC = () => (
         <a href="#case-studies-section" className="hover:text-white transition-colors">
           Case Studies
         </a>
-        <a href="#pricing-section" className="hover:text-white transition-colors">
+        <a href="https://lynk.id/airisk" className="hover:text-white transition-colors">
           Pricing Plans
         </a>
       </nav>

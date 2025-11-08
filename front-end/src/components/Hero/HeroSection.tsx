@@ -75,13 +75,13 @@ const HeroSection: React.FC = () => {
         <Globe />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70 pointer-events-none"></div>
       </div>
-      <div className="relative z-20 p-6 mt-[55vh] max-w-[90%] w-full">
+      <div className="relative z-20 p-6 mt-[40vh] max-w-[90%] w-full">
         <h1
           ref={h1Ref}
           className="text-5xl md:text-7xl font-extrabold tracking-tight"
           style={{ textShadow: "0 0 20px rgba(0,0,0,0.7)" }}
         >
-          Accelerate Your{" "}
+          Automate with{" "}
           <span
             id="ai-business"
             style={{
@@ -93,15 +93,29 @@ const HeroSection: React.FC = () => {
               background: "rgba(57,255,20,0.08)",
             }}
           >
-            AI
+            AIRISK
           </span>
-          Business
+          AI
         </h1>
         <p ref={pRef} className="mt-4 max-w-2xl mx-auto text-lg text-gray-300">
-          Empower your company with advanced AI solutions for real-time data, video, and audio
-          experiences. Unlock new opportunities, drive innovation, and scale with confidence using
-          our open-source technology.
+          Transform your business with intelligent automation. Our AI-powered platform streamlines
+          workflows, automates repetitive tasks, and delivers real-time insights. Experience the
+          future of work with smart automation that learns and adapts to your needs.
         </p>
+        <div className="mt-6 flex justify-center gap-8 text-gray-300">
+          <div className="flex flex-col items-center">
+            <span className="text-3xl font-bold text-[#39ff14]">85%</span>
+            <span className="text-sm mt-1">Task Automation</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-3xl font-bold text-[#39ff14]">24/7</span>
+            <span className="text-sm mt-1">Operation</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-3xl font-bold text-[#39ff14]">60%</span>
+            <span className="text-sm mt-1">Cost Reduction</span>
+          </div>
+        </div>
         <div className="mt-8 flex justify-center gap-4">
           <a
             ref={btn1Ref}
@@ -110,7 +124,7 @@ const HeroSection: React.FC = () => {
             onMouseEnter={() => handleBtnHover(btn1Ref, true)}
             onMouseLeave={() => handleBtnHover(btn1Ref, false)}
           >
-            Start building
+            Start Automating
           </a>
           <a
             ref={btn2Ref}
@@ -119,18 +133,18 @@ const HeroSection: React.FC = () => {
             onMouseEnter={() => handleBtnHover(btn2Ref, true)}
             onMouseLeave={() => handleBtnHover(btn2Ref, false)}
           >
-            Talk to us
+            Get Demo
           </a>
         </div>
       </div>
       <div className="absolute bottom-6 z-10 w-full">
-        <p className="text-sm text-gray-400">POWERING REAL-TIME FOR</p>
-        <div className="flex justify-center items-center gap-8 mt-4 filter grayscale opacity-60 hover:opacity-80 transition-opacity">
-          <span className="font-bold text-lg">LOGO 1</span>
-          <span className="font-bold text-lg">LOGO 2</span>
-          <span className="font-bold text-lg">LOGO 3</span>
-          <span className="font-bold text-lg">LOGO 4</span>
-        </div>
+        <p className="text-sm text-gray-400">TRUSTED BY AUTOMATION LEADERS</p>
+        {/* <div className="flex justify-center items-center gap-8 mt-4 filter grayscale opacity-60 hover:opacity-80 transition-opacity">
+          <span className="font-bold text-lg">Tesla</span>
+          <span className="font-bold text-lg">Amazon</span>
+          <span className="font-bold text-lg">Microsoft</span>
+          <span className="font-bold text-lg">IBM</span>
+        </div> */}
       </div>
     </section>
   );
