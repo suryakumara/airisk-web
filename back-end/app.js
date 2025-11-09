@@ -1,25 +1,34 @@
+// === [ Import Dependencies ] ===
 const express = require("express");
+const cors = require("cors");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 const { createCanvas, loadImage } = require("canvas");
 
+// === [ App Initialization ] ===
 const app = express();
 const upload = multer({ dest: "uploads/" });
 
-// Template paths
-const TEMPLATE_TKOM_PATH = "./template/template_tkom.png";
-const TEMPLATE_AIRISK_PATH = "./template/template_airisk.png";
+// === [ Middleware ] ===
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// === Ensure folders exist ===
-["uploads", "outputs"].forEach((d) => {
+// === [ Ensure Required Folders Exist ] ===
+["uploads", "outputs", "template"].forEach((d) => {
   if (!fs.existsSync(d)) fs.mkdirSync(d);
 });
 
-// === Serve outputs statically ===
+// === [ Static Directories ] ===
 app.use("/outputs", express.static("outputs"));
+app.use("/template", express.static("template"));
 
-// === Utility: wrapped text drawing ===
+// === [ Template Paths ] ===
+const TEMPLATE_TKOM_PATH = "./template/template_tkom.png";
+const TEMPLATE_AIRISK_PATH = "./template/template_airisk.png";
+
+// === [ Utility: Wrapped Text Drawing ] ===
 function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, draw = true) {
   const words = text.split(" ");
   let line = "";
@@ -43,7 +52,7 @@ function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, draw = true) {
   return lineCount * lineHeight;
 }
 
-// === Reusable overlay generator ===
+// === [ Reusable Overlay Generator ] ===
 async function generateOverlay(templatePath, imagePath, { title, subtitle1, subtitle2 }) {
   const outputPath = `./outputs/result_${Date.now()}.png`;
 
@@ -52,7 +61,7 @@ async function generateOverlay(templatePath, imagePath, { title, subtitle1, subt
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext("2d");
 
-  // Draw main image
+  // Draw main uploaded image
   const berita = await loadImage(imagePath);
   ctx.drawImage(berita, 0, 0, width, height);
 
@@ -60,12 +69,12 @@ async function generateOverlay(templatePath, imagePath, { title, subtitle1, subt
   const template = await loadImage(templatePath);
   ctx.drawImage(template, 0, 0, width, height);
 
-  // Text positioning
+  // Text styling
   const marginLeft = 15;
   const maxWidth = 900;
   const marginBottom = 80;
 
-  // Measure text blocks (for dynamic spacing)
+  // Calculate heights for spacing
   ctx.font = "32px Arial";
   const h2 = drawWrappedText(ctx, subtitle2, marginLeft, 0, maxWidth, 40, false);
 
@@ -78,7 +87,7 @@ async function generateOverlay(templatePath, imagePath, { title, subtitle1, subt
   const startY = height - marginBottom - h2 - h1 - ht;
   let y = startY;
 
-  // === Draw text blocks ===
+  // === Draw Text ===
   ctx.fillStyle = "#F6C90E";
   ctx.font = "bold 64px Arial Black";
   y += drawWrappedText(ctx, title.toUpperCase(), marginLeft, y, maxWidth, 70);
@@ -97,15 +106,14 @@ async function generateOverlay(templatePath, imagePath, { title, subtitle1, subt
   return outputPath;
 }
 
-// === Helper for consistent JSON response ===
+// === [ Helper: Respond with JSON ] ===
 function respondWithJson(res, outputPath, imagePath) {
   const fileUrl = `${res.req.protocol}://${res.req.get("host")}/outputs/${path.basename(
     outputPath
   )}`;
   const filename = path.basename(outputPath);
 
-  // Delete uploaded original image
-  fs.unlinkSync(imagePath);
+  if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
 
   res.json({
     success: true,
@@ -113,13 +121,13 @@ function respondWithJson(res, outputPath, imagePath) {
     file: {
       url: fileUrl,
       path: outputPath,
-      filename: filename,
+      filename,
     },
   });
 }
 
-// === ROUTE: TKOM ===
-app.post("/overlay/tkom", upload.single("image"), async (req, res) => {
+// === [ ROUTE: TKOM Template Overlay ] ===
+app.post("/api/overlay/tkom", upload.single("image"), async (req, res) => {
   try {
     const { title = "Breaking News", subtitle1 = "", subtitle2 = "" } = req.body;
 
@@ -136,8 +144,8 @@ app.post("/overlay/tkom", upload.single("image"), async (req, res) => {
   }
 });
 
-// === ROUTE: AIRISK ===
-app.post("/overlay/airisk", upload.single("image"), async (req, res) => {
+// === [ ROUTE: AIRISK Template Overlay ] ===
+app.post("/api/overlay/airisk", upload.single("image"), async (req, res) => {
   try {
     const { title = "Breaking News", subtitle1 = "", subtitle2 = "" } = req.body;
 
@@ -154,7 +162,13 @@ app.post("/overlay/airisk", upload.single("image"), async (req, res) => {
   }
 });
 
-// === Start server ===
-app.listen(3000, () => {
-  console.log("✅ Overlay API ready for n8n integration → http://localhost:3000");
+// === [ Default Health Check ] ===
+app.get("/api", (req, res) => {
+  res.json({ success: true, message: "✅ Airisk API is running!" });
+});
+
+// === [ Start Server ] ===
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`✅ Airisk Overlay API ready → http://localhost:${PORT}`);
 });
