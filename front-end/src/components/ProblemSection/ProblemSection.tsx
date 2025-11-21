@@ -36,7 +36,7 @@ const ProblemSection: React.FC = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
 
   return (
-    <section ref={sectionRef} className="py-24 px-8 bg-gradient-to-b from-black to-gray-900">
+    <section ref={sectionRef} className="py-24 px-8 bg-gradient-to-b from-black ">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* CNN Visualization */}

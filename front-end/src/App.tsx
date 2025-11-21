@@ -1,10 +1,10 @@
 import React from "react";
-import Header from "./components/Header/Header";
-import HeroSection from "./components/Hero/HeroSection";
-import ProblemSection from "./components/ProblemSection/ProblemSection";
-import "./styles/global.css";
-import "./styles/cursor.css";
 import "./App.css";
+import Header from "./components/Header/Header";
+import HeroSection3d from "./components/Hero/HeroSection3d";
+import ProblemSection from "./components/ProblemSection/ProblemSection";
+import "./styles/cursor.css";
+import "./styles/global.css";
 
 // Register ScrollToPlugin with GSAP
 // gsap.registerPlugin(ScrollToPlugin);
@@ -16,7 +16,7 @@ const App: React.FC = () => {
     <div className="bg-black">
       <Header />
       <main className="bg-black min-h-screen">
-        <HeroSection />
+        <HeroSection3d />
         <ProblemSection />
         <section className="py-20 text-center container mx-auto px-4">
           <h2 className="text-5xl font-bold mb-6">
