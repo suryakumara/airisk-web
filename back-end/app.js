@@ -1,19 +1,35 @@
 // === [ Import Dependencies ] ===
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
+const axios = require("axios");
 const { createCanvas, loadImage } = require("canvas");
+const FormData = require("form-data");
+const authRoutes = require("./src/routes/auth.routes");
+const botRoutes = require("./src/routes/bot.routes");
+const tgUserRoutes = require("./src/routes/tg-user.routes");
+const { startPolling } = require("./src/services/poller.service");
 
 // === [ App Initialization ] ===
 const app = express();
 const upload = multer({ dest: "uploads/" });
 
 // === [ Middleware ] ===
-app.use(cors());
+app.use(cors({ origin: process.env.CLIENT_URL || "*" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// === [ Auth Routes ] ===
+app.use("/api/auth", authRoutes);
+
+// === [ Bot Routes ] ===
+app.use("/api/bots", botRoutes);
+
+// === [ Telegram User Routes ] ===
+app.use("/api/tg", tgUserRoutes);
 
 // === [ Ensure Required Folders Exist ] ===
 ["uploads", "outputs", "template"].forEach((d) => {
@@ -162,8 +178,67 @@ app.post("/api/overlay/airisk", upload.single("image"), async (req, res) => {
   }
 });
 
+// === [ Telegram Proxy Routes ] ===
+app.all("/tg/bot:token/:method", async (req, res) => {
+  const { token, method } = req.params;
+  const url = `https://api.telegram.org/bot${token}/${method}`;
+  try {
+    const response = await axios({
+      method: req.method,
+      url,
+      params: req.query,
+      data: req.body,
+    });
+    res.json(response.data);
+  } catch (err) {
+    const status = err.response?.status || 500;
+    res.status(status).json(err.response?.data || { ok: false, description: err.message });
+  }
+});
+
+// === [ Telegram Media Proxy ] ===
+// Forwards multipart files (photo / video / document / voice) to Telegram
+const MEDIA_METHOD = {
+  photo: "sendPhoto",
+  video: "sendVideo",
+  document: "sendDocument",
+  voice: "sendVoice",
+};
+
+app.post("/tg/send-media", upload.single("file"), async (req, res) => {
+  const { token, chat_id, type, caption } = req.body;
+  const method = MEDIA_METHOD[type];
+
+  if (!method)
+    return res.status(400).json({ ok: false, description: "Invalid media type." });
+  if (!req.file)
+    return res.status(400).json({ ok: false, description: "No file uploaded." });
+
+  const form = new FormData();
+  form.append("chat_id", chat_id);
+  if (caption) form.append("caption", caption);
+  form.append(type, fs.createReadStream(req.file.path), {
+    filename: req.file.originalname || `file`,
+    contentType: req.file.mimetype,
+  });
+
+  try {
+    const response = await axios.post(
+      `https://api.telegram.org/bot${token}/${method}`,
+      form,
+      { headers: form.getHeaders() }
+    );
+    res.json(response.data);
+  } catch (err) {
+    const status = err.response?.status || 500;
+    res.status(status).json(err.response?.data || { ok: false, description: err.message });
+  } finally {
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+  }
+});
+
 // === [ Default Health Check ] ===
-app.get("/api", (req, res) => {
+app.get("/api", (_req, res) => {
   res.json({ success: true, message: "✅ Airisk API is running!" });
 });
 
@@ -171,4 +246,5 @@ app.get("/api", (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`✅ Airisk Overlay API ready → http://localhost:${PORT}`);
+  startPolling();
 });
