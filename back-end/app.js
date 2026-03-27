@@ -10,6 +10,7 @@ const { createCanvas, loadImage } = require("canvas");
 const FormData = require("form-data");
 const authRoutes = require("./src/routes/auth.routes");
 const botRoutes = require("./src/routes/bot.routes");
+const tgUserRoutes = require("./src/routes/tg-user.routes");
 const { startPolling } = require("./src/services/poller.service");
 
 // === [ App Initialization ] ===
@@ -26,6 +27,9 @@ app.use("/api/auth", authRoutes);
 
 // === [ Bot Routes ] ===
 app.use("/api/bots", botRoutes);
+
+// === [ Telegram User Routes ] ===
+app.use("/api/tg", tgUserRoutes);
 
 // === [ Ensure Required Folders Exist ] ===
 ["uploads", "outputs", "template"].forEach((d) => {
