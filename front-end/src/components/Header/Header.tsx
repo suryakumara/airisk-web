@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import logo from "../../assets/logo.png";
 
 const Header: React.FC = () => (
@@ -29,18 +30,18 @@ const Header: React.FC = () => (
         </a>
       </nav>
       <div className="flex items-center space-x-4">
-        <a
-          href="#"
+        <Link
+          to="/login"
           className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
         >
           Sign In
-        </a>
-        <a
-          href="#"
+        </Link>
+        <Link
+          to="/register"
           className="bg-white text-black text-sm font-bold py-2 px-4 rounded-md hover:bg-gray-200 transition-colors"
         >
           Start for free
-        </a>
+        </Link>
       </div>
     </div>
   </header>

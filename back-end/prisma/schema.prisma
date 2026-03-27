@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(255)
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  createdAt DateTime @default(now())
+  bots      Bot[]
+
+  @@map("users")
+}
+
+model Bot {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  name        String    @db.VarChar(255)
+  token       String    @db.VarChar(255)
+  username    String?   @db.VarChar(255)
+  description String?   @db.VarChar(500)
+  chatId      String?   @db.VarChar(100)
+  botOrder    Int       @default(0)
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages    Message[]
+
+  @@unique([userId, token])
+  @@map("bots")
+}
+
+model Message {
+  id          Int      @id @default(autoincrement())
+  botId       Int
+  updateId    Int?
+  direction   String   @db.VarChar(3)
+  text        String?  @db.Text
+  mediaType   String?  @db.VarChar(20)
+  fileName    String?  @db.VarChar(255)
+  senderName  String?  @db.VarChar(255)
+  chatIdFrom  String?  @db.VarChar(100)
+  timestamp   DateTime @default(now())
+  bot         Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
+
+  @@unique([botId, updateId])
+  @@map("messages")
+}
