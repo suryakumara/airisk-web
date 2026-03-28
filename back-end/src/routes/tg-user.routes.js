@@ -1,9 +1,57 @@
 const express = require("express");
+const jwt = require("jsonwebtoken");
 const prisma = require("../lib/prisma");
 const authMiddleware = require("../middleware/auth.middleware");
 const gramjs = require("../lib/gramjs.manager");
 
 const router = express.Router();
+const JWT_SECRET = process.env.JWT_SECRET || "airisk_secret_change_me";
+
+// ── GET /api/tg/media/:username/:messageId  (no authMiddleware — uses query token for <img>/<video> src) ──
+router.get("/media/:username/:messageId", async (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1] || req.query.token;
+  if (!token) return res.status(401).end();
+
+  let userId;
+  try {
+    userId = jwt.verify(token, JWT_SECRET).id;
+  } catch {
+    return res.status(401).end();
+  }
+
+  const account = await prisma.telegramAccount.findUnique({ where: { userId } });
+  if (!account) return res.status(401).end();
+
+  const client = await gramjs.getClient(userId, account.sessionStr);
+  if (!client) return res.status(401).end();
+
+  try {
+    const { username, messageId } = req.params;
+    const messages = await client.getMessages(username, { ids: [Number(messageId)] });
+    const message = messages[0];
+    if (!message?.media) return res.status(404).end();
+
+    const data = await client.downloadMedia(message, {});
+    if (!data) return res.status(404).end();
+
+    const buffer = Buffer.from(data);
+
+    let contentType = "application/octet-stream";
+    if (message.photo) contentType = "image/jpeg";
+    else if (message.video) contentType = "video/mp4";
+    else if (message.voice) contentType = "audio/ogg";
+    else if (message.audio) contentType = "audio/mpeg";
+    else if (message.document) contentType = message.document.mimeType || "application/octet-stream";
+
+    res.set("Content-Type", contentType);
+    res.set("Cache-Control", "public, max-age=3600");
+    res.send(buffer);
+  } catch (err) {
+    console.error("Media download error:", err.message);
+    res.status(500).end();
+  }
+});
+
 router.use(authMiddleware);
 
 // Helper: resolve client or respond 401

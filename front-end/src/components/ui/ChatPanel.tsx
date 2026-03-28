@@ -1,8 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { FiTrash2, FiSend, FiLoader, FiFile, FiImage, FiVideo, FiMic } from "react-icons/fi";
+import { FiTrash2, FiSend, FiLoader, FiFile } from "react-icons/fi";
 import { MdDragIndicator } from "react-icons/md";
 import { tgGetMessages, tgSendMessage } from "../../services/telegram.service";
+import { useAuthStore } from "../../store/useAuthStore";
 import type { ChatPanel as ChatPanelType, ChatMessage } from "../../types/telegram.types";
+
+const API = import.meta.env.VITE_PROXY_URL ?? "http://localhost:3000";
 
 interface Props {
   panel: ChatPanelType;
@@ -14,13 +17,34 @@ interface Props {
   onDelete: () => void;
 }
 
-const MediaIcon: React.FC<{ type: ChatMessage["mediaType"] }> = ({ type }) => {
-  switch (type) {
-    case "photo":    return <div className="flex items-center gap-1.5 text-sm text-gray-300"><FiImage size={13} className="text-cyan-400" /> Photo</div>;
-    case "video":    return <div className="flex items-center gap-1.5 text-sm text-gray-300"><FiVideo size={13} className="text-purple-400" /> Video</div>;
-    case "voice":    return <div className="flex items-center gap-1.5 text-sm text-gray-300"><FiMic size={13} className="text-emerald-400" /> Voice message</div>;
-    case "document": return <div className="flex items-center gap-1.5 text-sm text-gray-300"><FiFile size={13} className="text-amber-400" /> File</div>;
-    default:         return null;
+const MediaContent: React.FC<{ msg: ChatMessage; botUsername: string }> = ({ msg, botUsername }) => {
+  const token = useAuthStore.getState().token;
+  const src = `${API}/api/tg/media/${encodeURIComponent(botUsername)}/${msg.id}?token=${encodeURIComponent(token ?? "")}`;
+
+  switch (msg.mediaType) {
+    case "photo":
+      return (
+        <img
+          src={src}
+          alt="photo"
+          className="max-w-full rounded-lg max-h-48 object-cover cursor-pointer"
+          onClick={() => window.open(src, "_blank")}
+        />
+      );
+    case "video":
+      return <video src={src} controls className="max-w-full rounded-lg max-h-48" />;
+    case "voice":
+      return <audio src={src} controls className="w-full max-w-[220px] h-8" />;
+    case "document":
+      return (
+        <a href={src} download={msg.fileName ?? "file"}
+          className="flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 transition-colors">
+          <FiFile size={13} />
+          <span className="truncate max-w-[160px]">{msg.fileName ?? "Download file"}</span>
+        </a>
+      );
+    default:
+      return null;
   }
 };
 
@@ -150,7 +174,7 @@ const ChatPanel: React.FC<Props> = ({
               }`}>
                 {msg.mediaType ? (
                   <>
-                    <MediaIcon type={msg.mediaType} />
+                    <MediaContent msg={msg} botUsername={panel.botUsername} />
                     {msg.text && <p className="text-xs text-gray-400 mt-1">{msg.text}</p>}
                   </>
                 ) : (
