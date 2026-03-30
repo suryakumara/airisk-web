@@ -8,10 +8,16 @@ const path = require("path");
 const axios = require("axios");
 const { createCanvas, loadImage } = require("canvas");
 const FormData = require("form-data");
+const jwt = require("jsonwebtoken");
 const authRoutes = require("./src/routes/auth.routes");
 const botRoutes = require("./src/routes/bot.routes");
 const tgUserRoutes = require("./src/routes/tg-user.routes");
 const { startPolling } = require("./src/services/poller.service");
+const prisma = require("./src/lib/prisma");
+const gramjs = require("./src/lib/gramjs.manager");
+
+const JWT_SECRET = process.env.JWT_SECRET || "airisk_secret_change_me";
+const mediaCache = new Map();
 
 // === [ App Initialization ] ===
 const app = express();
@@ -21,6 +27,55 @@ const upload = multer({ dest: "uploads/" });
 app.use(cors({ origin: process.env.CLIENT_URL || "*" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// === [ Telegram Media (public, token via query param) ] ===
+app.get("/api/tg/media/:username/:messageId", async (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1] || req.query.token;
+  if (!token) return res.status(401).end();
+
+  let userId;
+  try { userId = jwt.verify(token, JWT_SECRET).id; } catch { return res.status(401).end(); }
+
+  const cacheKey = `${userId}:${req.params.username}:${req.params.messageId}`;
+  if (mediaCache.has(cacheKey)) {
+    const { buffer, contentType } = mediaCache.get(cacheKey);
+    res.set("Content-Type", contentType);
+    res.set("Cache-Control", "public, max-age=3600");
+    return res.send(buffer);
+  }
+
+  const account = await prisma.telegramAccount.findUnique({ where: { userId } });
+  if (!account) return res.status(401).end();
+  const client = await gramjs.getClient(userId, account.sessionStr);
+  if (!client) return res.status(401).end();
+
+  try {
+    const messages = await client.getMessages(req.params.username, { ids: [Number(req.params.messageId)] });
+    const message = messages[0];
+    if (!message?.media) return res.status(404).end();
+
+    const data = await client.downloadMedia(message, {});
+    if (!data) return res.status(404).end();
+
+    const buffer = Buffer.from(data);
+    let contentType = "application/octet-stream";
+    if (message.photo) contentType = "image/jpeg";
+    else if (message.video) contentType = "video/mp4";
+    else if (message.voice) contentType = "audio/ogg";
+    else if (message.audio) contentType = "audio/mpeg";
+    else if (message.document) contentType = message.document.mimeType || "application/octet-stream";
+
+    if (mediaCache.size > 100) mediaCache.delete(mediaCache.keys().next().value);
+    mediaCache.set(cacheKey, { buffer, contentType });
+
+    res.set("Content-Type", contentType);
+    res.set("Cache-Control", "public, max-age=3600");
+    res.send(buffer);
+  } catch (err) {
+    console.error("Media error:", err.message);
+    res.status(500).end();
+  }
+});
 
 // === [ Auth Routes ] ===
 app.use("/api/auth", authRoutes);

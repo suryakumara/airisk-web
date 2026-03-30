@@ -86,18 +86,22 @@ const ChatPanel: React.FC<Props> = ({
     load();
   }, [panel.botUsername]);
 
-  // Poll every 3s for new messages
+  // Poll every 15s for new messages (avoid Telegram flood wait)
+  const pollingRef = useRef(false);
   useEffect(() => {
     const interval = setInterval(async () => {
-      if (lastIdRef.current === 0) return;
+      if (lastIdRef.current === 0 || pollingRef.current) return;
+      pollingRef.current = true;
       try {
         const data = await tgGetMessages(panel.botUsername, lastIdRef.current);
         if (data.success && data.messages.length > 0) {
           setMessages((prev) => [...prev, ...data.messages]);
           lastIdRef.current = data.messages[data.messages.length - 1].id;
         }
-      } catch {}
-    }, 3000);
+      } catch {} finally {
+        pollingRef.current = false;
+      }
+    }, 15000);
     return () => clearInterval(interval);
   }, [panel.botUsername]);
 
